@@ -7,12 +7,11 @@ module MiniLab0(clk, KEY0, LEDR, SW);
 	output logic [9:0]	LEDR;	// Data written to LED
 	
 	// Internal nets
-	logic   [15:0]	addr;
-	logic   [15:0]	wdata;
-	logic   [15:0]	rdata;
-	logic   we, re;
-	logic   [9:0]nxt_LEDR;
-	logic   rst_n;
+	logic   [15:0]	addr;		// Memory address being written
+	logic   [15:0]	wdata;		// Data being written
+	logic   [15:0]	rdata;		// Read data from MM
+	logic   we, re;				// Write enable and read enable from CPU
+	logic   rst_n;				// Synchronized rst_n to CPU from rst_synch
 	
 	// Instantiate reset synchronizer
 	rst_synch iRST(.RST_n(KEY0), .rst_n(rst_n), .clk(clk));
@@ -40,8 +39,6 @@ module MiniLab0(clk, KEY0, LEDR, SW);
 	assign mm_re = |addr[15:13] & re;
 	assign mm_we = |addr[15:13] & we;
 	
-	//assign nxt_LEDR = mm_we && (addr == 16'hC001) ? wdata[9:0] : LEDR[9:0];
-
     always_ff @(negedge clk, negedge rst_n)
 		if(!rst_n)
 			LEDR <= 10'h000;
