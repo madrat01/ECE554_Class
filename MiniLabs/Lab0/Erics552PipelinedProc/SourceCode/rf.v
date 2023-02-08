@@ -24,19 +24,22 @@ reg [15:0]mem[0:15];					// 16 registers each 16-bit wide
 // Register file will come up uninitialized except for //
 // register zero which is hardwired to be zero.       //
 ///////////////////////////////////////////////////////
-initial begin
-  $readmemh("C:/Users/erichoffman/Documents/ECE_Classes/ECE552/EricStuff/Project/Tests/rfinit.txt",mem);
-  mem[0] = 16'h0000;					// reg0 is always 0,
-end
-
+//Comment the initial block for synthesizable design
+//initial begin
+//  $readmemh("C:/Users/erichoffman/Documents/ECE_Classes/ECE552/EricStuff/Project/Tests/rfinit.txt",mem);
+//  mem[0] = 16'h0000;					// reg0 is always 0,
+//end
 
 //////////////////////////////////
 // RF is written on clock high //
 ////////////////////////////////
-always @(clk,we,dst_addr,dst)
+always @(clk,we,dst_addr,dst) begin
+  // REG0 is always 0
+  mem[0] <= 16'h0;
   if (clk && we && |dst_addr)
     mem[dst_addr] <= dst;
-	
+end
+
 //////////////////////////////
 // RF is read on clock low //
 ////////////////////////////

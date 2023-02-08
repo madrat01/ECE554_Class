@@ -4,7 +4,7 @@ module MiniLab0_tb();
 	logic [9:0] LEDR, SW;
 	
 	// Initialize MiniLab0 module
-	MiniLab0 iDUT(.clk(clk), .KEY0(rst_n), .LEDR(LEDR), .SW(SW));
+	MiniLab0 iDUT(.CLOCK_50(clk), .CLOCK2_50(1'b0), .CLOCK3_50(1'b0), .CLOCK4_50(1'b0), .KEY({3'b0,rst_n}), .LEDR(LEDR), .SW(SW));
 	
 	initial begin
 		// Non-reset initial mode
