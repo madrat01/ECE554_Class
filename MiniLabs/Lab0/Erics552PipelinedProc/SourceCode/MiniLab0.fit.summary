@@ -1,16 +1,16 @@
-Fitter Status : Successful - Tue Feb  7 16:55:19 2023
+Fitter Status : Successful - Thu Feb  9 16:16:30 2023
 Quartus Prime Version : 21.1.0 Build 842 10/21/2021 SJ Lite Edition
 Revision Name : MiniLab0
 Top-level Entity Name : MiniLab0
 Family : Cyclone V
 Device : 5CSEMA5F31C6
 Timing Models : Final
-Logic utilization (in ALMs) : 589 / 32,070 ( 2 % )
-Total registers : 265
+Logic utilization (in ALMs) : 256 / 32,070 ( < 1 % )
+Total registers : 287
 Total pins : 28 / 457 ( 6 % )
 Total virtual pins : 0
-Total block memory bits : 2,097,152 / 4,065,280 ( 52 % )
-Total RAM Blocks : 256 / 397 ( 64 % )
+Total block memory bits : 393,728 / 4,065,280 ( 10 % )
+Total RAM Blocks : 50 / 397 ( 13 % )
 Total DSP Blocks : 0 / 87 ( 0 % )
 Total HSSI RX PCSs : 0
 Total HSSI PMA RX Deserializers : 0

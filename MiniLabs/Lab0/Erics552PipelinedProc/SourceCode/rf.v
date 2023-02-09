@@ -27,6 +27,7 @@ reg [15:0]mem[0:15];					// 16 registers each 16-bit wide
 //Comment the initial block for synthesizable design
 //initial begin
 //  $readmemh("C:/Users/erichoffman/Documents/ECE_Classes/ECE552/EricStuff/Project/Tests/rfinit.txt",mem);
+//  mem[0] is now always written in the always block 
 //  mem[0] = 16'h0000;					// reg0 is always 0,
 //end
 
@@ -36,7 +37,6 @@ reg [15:0]mem[0:15];					// 16 registers each 16-bit wide
 always @(negedge clk) begin
   if (we && |dst_addr)
     mem[dst_addr] <= dst;
-  mem[0] = 16'h0000;    // always write 0 to R0
 end
 	
 //////////////////////////////

@@ -1,13 +1,13 @@
-Analysis & Synthesis Status : Successful - Tue Feb  7 16:53:40 2023
+Analysis & Synthesis Status : Successful - Thu Feb  9 16:15:21 2023
 Quartus Prime Version : 21.1.0 Build 842 10/21/2021 SJ Lite Edition
 Revision Name : MiniLab0
 Top-level Entity Name : MiniLab0
 Family : Cyclone V
 Logic utilization (in ALMs) : N/A
-Total registers : 244
+Total registers : 260
 Total pins : 28
 Total virtual pins : 0
-Total block memory bits : 2,097,152
+Total block memory bits : 393,728
 Total DSP Blocks : 0
 Total HSSI RX PCSs : 0
 Total HSSI PMA RX Deserializers : 0

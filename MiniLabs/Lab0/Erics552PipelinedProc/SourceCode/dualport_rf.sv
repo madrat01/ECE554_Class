@@ -39,7 +39,9 @@ module dualport_rf(clk,rst_n,p0_addr,p1_addr,p0,p1,re0,re1,dst_addr,dst,we,hlt);
 
 	// check if previous write is enabled, not writing to R0, and write address matches read address 
 	// then forward previous write data, else use output from register file
-	assign p0 = prev_we && |prev_addr && (prev_addr == p0_addr) ? prev_dst : p0_rf;
-	assign p1 = prev_we && |prev_addr && (prev_addr == p1_addr) ? prev_dst : p1_rf;
+	assign p0 = ~|p0_addr ? 'h0 :
+                prev_we && (prev_addr == p0_addr) ? prev_dst : p0_rf;
+	assign p1 = ~|p1_addr ? 'h0 :
+                prev_we && (prev_addr == p1_addr) ? prev_dst : p1_rf;
 
 endmodule

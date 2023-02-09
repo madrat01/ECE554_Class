@@ -1,12 +1,12 @@
 module IM(clk,addr,rd_en,instr);
 
 input clk;
-input [15:0] addr;
+input [13:0] addr;
 input rd_en;			// asserted when instruction read desired
 
 output reg [15:0] instr;	//output of insturction memory
 
-reg [15:0]instr_mem[0:65535];
+reg [15:0]instr_mem[0:16383];
 
 /////////////////////////////////////
 // Memory is latched on clock low //
@@ -22,7 +22,7 @@ always @ (negedge clk)
     instr <= instr_mem[addr];
 
 initial begin
-  $readmemh("C:/Users/acfra/Documents/ECE554/ECE554_Class/MiniLabs/Lab0/Erics552PipelinedProc/SourceCode/BasicOpCodes1.hex",instr_mem);
+  $readmemh("LED_SW.hex",instr_mem);
 end
 
 endmodule
