@@ -86,8 +86,11 @@ always @(posedge clk, negedge rst_n)
 /////////////////////////////////////////////////////////////
 // Pipeline control signals needed in EX stage and beyond //
 ///////////////////////////////////////////////////////////
-always @(posedge clk)
-  if (!stall_ID_EX)
+always @(posedge clk, negedge rst_n)
+  if (!rst_n) begin
+    rf_we_ID_EX <= 0;
+  end
+  else if (!stall_ID_EX)
     begin
 	  br_instr_ID_EX 	<= br_instr & !flush;
 	  jmp_imm_ID_EX   	<= jmp_imm & !flush;
@@ -108,10 +111,14 @@ always @(posedge clk)
 //////////////////////////////////////////////////////////////
 // Pipeline control signals needed in MEM stage and beyond //
 ////////////////////////////////////////////////////////////
-always @(posedge clk)
-  if (!stall_EX_DM)
+always @(posedge clk, negedge rst_n)
+  if(!rst_n) begin
+    rf_we_EX_DM		<= 0;
+	rf_dst_addr_EX_DM <= 0;
+  end
+  else if (!stall_EX_DM)
     begin
-	  rf_we_EX_DM		<= rf_we_ID_EX & (!(cond_ex_ID_EX & !zr_EX_DM));	// ADDZ
+	  rf_we_EX_DM  <= rf_we_ID_EX & (!(cond_ex_ID_EX & !zr_EX_DM));	// ADDZ
 	  rf_dst_addr_EX_DM <= rf_dst_addr_ID_EX;
       dm_re_EX_DM		<= dm_re_ID_EX;
 	  dm_we_EX_DM		<= dm_we_ID_EX;
@@ -119,9 +126,15 @@ always @(posedge clk)
 	end
 	
 	
-always @(posedge clk) begin
-  rf_we_DM_WB 		<= rf_we_EX_DM;
-  rf_dst_addr_DM_WB <= rf_dst_addr_EX_DM;
+always @(posedge clk, negedge rst_n) begin
+  if(!rst_n) begin
+    rf_we_DM_WB <= 0;
+    rf_dst_addr_DM_WB <= 0;
+  end
+  else begin
+	rf_we_DM_WB 		<= rf_we_EX_DM;
+	rf_dst_addr_DM_WB <= rf_dst_addr_EX_DM;
+  end
 end
 
 

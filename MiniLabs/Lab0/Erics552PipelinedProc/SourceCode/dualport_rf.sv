@@ -34,7 +34,7 @@ module dualport_rf(clk,rst_n,p0_addr,p1_addr,p0,p1,re0,re1,dst_addr,dst,we,hlt);
 	rf iRF0(.clk(clk), .p0_addr(p0_addr), .p0(p0_rf), .re0(re0), .dst_addr(dst_addr), .dst(dst), .we(we), .hlt(hlt));
 	rf iRF1(.clk(clk), .p0_addr(p1_addr), .p0(p1_rf), .re0(re1), .dst_addr(dst_addr), .dst(dst), .we(we), .hlt(hlt));
 
-	assign p0 = prev_we && (prev_addr == p0_addr) ? prev_dst : p0_rf;
-	assign p1 = prev_we && (prev_addr == p1_addr) ? prev_dst : p1_rf;
+	assign p0 = prev_we && |prev_addr && (prev_addr == p0_addr) ? prev_dst : p0_rf;
+	assign p1 = prev_we && |prev_addr && (prev_addr == p1_addr) ? prev_dst : p1_rf;
 
 endmodule
