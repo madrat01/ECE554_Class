@@ -54,13 +54,13 @@ id	iID(.clk(clk), .rst_n(rst_n), .instr(instr), .zr_EX_DM(zr_EX_DM), .br_instr_I
 		.dm_we_EX_DM(dm_we_EX_DM), .clk_z_ID_EX(clk_z_ID_EX), .clk_nv_ID_EX(clk_nv_ID_EX),
 		.instr_ID_EX(instr_ID_EX), .cc_ID_EX(cc_ID_EX), .stall_IM_ID(stall_IM_ID),
 		.stall_ID_EX(stall_ID_EX), .stall_EX_DM(stall_EX_DM), .hlt_DM_WB(hlt_DM_WB),
-		.byp0_EX(byp0_EX), .byp0_DM(byp0_DM), .byp1_EX(byp1_EX), .byp1_DM(byp1_DM),
+		.byp0_EX(byp0_EX), .byp0_DM(byp0_DM)/*, .byp0_WB(byp0_WB)*/, .byp1_EX(byp1_EX), .byp1_DM(byp1_DM),// .byp1_WB(byp1_WB),
 		.flow_change_ID_EX(flow_change_ID_EX));
 	   
 ////////////////////////////////
 // Instantiate register file //
 //////////////////////////////
-rf iRF(.clk(clk), .p0_addr(rf_p0_addr), .p1_addr(rf_p1_addr), .p0(p0), .p1(p1),
+dualport_rf iRF(.clk(clk), .rst_n(rst_n), .p0_addr(rf_p0_addr), .p1_addr(rf_p1_addr), .p0(p0), .p1(p1),
        .re0(rf_re0), .re1(rf_re1), .dst_addr(rf_dst_addr_DM_WB), .dst(rf_w_data_DM_WB),
  	   .we(rf_we_DM_WB), .hlt(hlt_DM_WB));
 	   
@@ -70,8 +70,8 @@ rf iRF(.clk(clk), .p0_addr(rf_p0_addr), .p1_addr(rf_p1_addr), .p0(p0), .p1(p1),
 src_mux ISRCMUX(.clk(clk), .stall_ID_EX(stall_ID_EX), .stall_EX_DM(stall_EX_DM),
                 .src0sel_ID_EX(src0sel_ID_EX), .src1sel_ID_EX(src1sel_ID_EX), .p0(p0), .p1(p1),
                 .imm_ID_EX(instr_ID_EX), .pc_ID_EX(pc_ID_EX), .p0_EX_DM(p0_EX_DM),
-				.src0(src0), .src1(src1), .dst_EX_DM(dst_EX_DM), .dst_DM_WB(rf_w_data_DM_WB),
-			    .byp0_EX(byp0_EX), .byp0_DM(byp0_DM), .byp1_EX(byp1_EX), .byp1_DM(byp1_DM));
+				.src0(src0), .src1(src1), .dst_EX_DM(dst_EX_DM), .dst_DM_WB(rf_w_data_DM_WB), //.dst_WB(rf_w_data_DM_WB), 
+			    .byp0_EX(byp0_EX), .byp0_DM(byp0_DM)/*, .byp0_WB(byp0_WB)*/, .byp1_EX(byp1_EX), .byp1_DM(byp1_DM)/*, .byp1_WB(byp1_WB)*/);
 	   
 //////////////////////
 // Instantiate ALU //

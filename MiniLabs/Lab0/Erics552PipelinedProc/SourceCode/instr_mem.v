@@ -22,7 +22,7 @@ always @ (negedge clk)
     instr <= instr_mem[addr];
 
 initial begin
-  $readmemh("LED_SW.hex",instr_mem);
+  $readmemh("C:/Users/acfra/Documents/ECE554/ECE554_Class/MiniLabs/Lab0/Erics552PipelinedProc/SourceCode/BasicOpCodes1.hex",instr_mem);
 end
 
 endmodule

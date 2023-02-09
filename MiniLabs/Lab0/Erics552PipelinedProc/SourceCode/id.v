@@ -2,8 +2,8 @@ module id(clk,rst_n,instr,zr_EX_DM,br_instr_ID_EX,jmp_imm_ID_EX,jmp_reg_ID_EX,
           jmp_imm_EX_DM,rf_re0,rf_re1,
           rf_we_DM_WB,rf_p0_addr,rf_p1_addr,rf_dst_addr_DM_WB,alu_func_ID_EX,src0sel_ID_EX,
 		  src1sel_ID_EX,dm_re_EX_DM,dm_we_EX_DM,clk_z_ID_EX,clk_nv_ID_EX,instr_ID_EX,
-		  cc_ID_EX, stall_IM_ID,stall_ID_EX,stall_EX_DM,hlt_DM_WB,byp0_EX,byp0_DM,
-		  byp1_EX,byp1_DM,flow_change_ID_EX);
+		  cc_ID_EX, stall_IM_ID,stall_ID_EX,stall_EX_DM,hlt_DM_WB,byp0_EX,byp0_DM,//byp0_WB,
+		  byp1_EX,byp1_DM/*,byp1_WB*/,flow_change_ID_EX);
 
 input clk,rst_n;
 input [15:0] instr;					// instruction to decode and execute direct from IM, flop first
@@ -33,8 +33,8 @@ output stall_IM_ID;					// asserted for hazards and halt instruction, stalls IM_
 output stall_ID_EX;					// asserted for hazards and halt instruction, stalls ID_EX flops
 output stall_EX_DM;					// asserted for hazards and halt instruction, stalls EX_DM flops
 output reg hlt_DM_WB;				// needed for register dump
-output reg byp0_EX,byp0_DM;			// bypasing controls for RF_p0
-output reg byp1_EX,byp1_DM;			// bypassing controls for RF_p1
+output reg byp0_EX,byp0_DM/*,byp0_WB*/;			// bypasing controls for RF_p0
+output reg byp1_EX,byp1_DM/*,byp1_WB*/;			// bypassing controls for RF_p1
 
 ////////////////////////////////////////////////////////////////
 // Register type needed for assignment in combinational case //
@@ -133,15 +133,19 @@ always @(posedge clk, negedge rst_n)
     begin
 	  byp0_EX <= 1'b0;
 	  byp0_DM <= 1'b0;
+	  //byp0_WB <= 1'b0;
 	  byp1_EX <= 1'b0;
 	  byp1_DM <= 1'b0;
+	  //byp1_WB <= 1'b0;
 	end
   else
     begin
-	  byp0_EX <= (rf_dst_addr_ID_EX==rf_p0_addr) ? (rf_we_ID_EX & |rf_p0_addr) : 1'b0;
-	  byp0_DM <= (rf_dst_addr_EX_DM==rf_p0_addr) ? (rf_we_EX_DM & |rf_p0_addr) : 1'b0;
+	  byp0_EX <= (rf_dst_addr_ID_EX==rf_p0_addr) ? (rf_we_ID_EX & |rf_p0_addr) : 1'b0;	// EX - EX Bypass
+	  byp0_DM <= (rf_dst_addr_EX_DM==rf_p0_addr) ? (rf_we_EX_DM & |rf_p0_addr) : 1'b0;	// 
+	  //byp0_WB <= (rf_dst_addr_DM_WB==rf_p0_addr) ? (rf_we_DM_WB & |rf_p0_addr) : 1'b0;
 	  byp1_EX <= (rf_dst_addr_ID_EX==rf_p1_addr) ? (rf_we_ID_EX & |rf_p1_addr) : 1'b0;
 	  byp1_DM <= (rf_dst_addr_EX_DM==rf_p1_addr) ? (rf_we_EX_DM & |rf_p1_addr) : 1'b0;
+	  //byp1_WB <= (rf_dst_addr_DM_WB==rf_p1_addr) ? (rf_we_DM_WB & |rf_p1_addr) : 1'b0;
 	end
 	
 ///////////////////////////////////////////
