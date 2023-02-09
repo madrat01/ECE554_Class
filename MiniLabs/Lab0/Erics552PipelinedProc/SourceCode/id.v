@@ -87,7 +87,7 @@ always @(posedge clk, negedge rst_n)
 // Pipeline control signals needed in EX stage and beyond //
 ///////////////////////////////////////////////////////////
 always @(posedge clk, negedge rst_n)
-  if (!rst_n) begin
+  if (!rst_n) begin // initialize we and dst_addr for rf bypassing
     rf_we_ID_EX <= 0;
   end
   else if (!stall_ID_EX)
@@ -112,7 +112,7 @@ always @(posedge clk, negedge rst_n)
 // Pipeline control signals needed in MEM stage and beyond //
 ////////////////////////////////////////////////////////////
 always @(posedge clk, negedge rst_n)
-  if(!rst_n) begin
+  if(!rst_n) begin // initialize we and dst_addr for rf bypassing
     rf_we_EX_DM		<= 0;
 	rf_dst_addr_EX_DM <= 0;
   end
@@ -127,7 +127,7 @@ always @(posedge clk, negedge rst_n)
 	
 	
 always @(posedge clk, negedge rst_n) begin
-  if(!rst_n) begin
+  if(!rst_n) begin // initialize we and dst_addr for rf bypassing
     rf_we_DM_WB <= 0;
     rf_dst_addr_DM_WB <= 0;
   end
