@@ -1,112 +1,91 @@
-module UART_tx(clk,rst_n,TX,trmt,tx_data,tx_done);
+module UART_tx(input clk, input rst_n, output TX, input trmt, input [7:0]tx_data, output logic tx_done);
+	// internal signals
+	logic init, shift, transmitting, set_done;
+	logic [8:0] tx_shft_reg;
+	logic [3:0] bit_cnt;
+	logic [11:0] baud_cnt;
+	
+	// states
+	typedef enum logic {IDLE, TRANSMIT} state_t;
+	state_t state, nxt_state;
+						 
+	assign shift = baud_cnt == 12'd2604 ? 1'b1 : 1'b0;
+	
+	assign TX = tx_shft_reg[0];
+				
+	// shift_reg mux and flop
+	always_ff @(posedge clk, negedge rst_n)
+		if(!rst_n)
+			tx_shft_reg <= 9'b111111111;
+		else if(init)
+			tx_shft_reg <= {tx_data, 1'b0};
+		else if(shift)
+			tx_shft_reg <= {1'b1, tx_shft_reg[8:1]};
+		else
+			tx_shft_reg <= tx_shft_reg;
+		
+		
+	// bit_cnt mux and flop
+	always_ff @(posedge clk, negedge rst_n)
+		if(!rst_n)
+			bit_cnt <= 0;
+		else if(init)
+			bit_cnt <= 0;
+		else if(shift)
+			bit_cnt <= bit_cnt + 1;
+		else
+			bit_cnt <= bit_cnt;	
+		
+	// baud_cnt mux and flop
+	always_ff @(posedge clk, negedge rst_n)
+		if(!rst_n)
+			baud_cnt <= 0;
+		else if(init | shift)
+			baud_cnt <= 0;
+		else if(transmitting)
+			baud_cnt <= baud_cnt + 1;
+		else
+			baud_cnt <= baud_cnt;
+			
+	// tx_done
+	always_ff @(posedge clk, negedge rst_n)
+		if(!rst_n)
+			tx_done <= 0;
+		else if(init)
+			tx_done <= 0;
+		else if(set_done)
+			tx_done <= 1;
+			
+	// state flop
+	always_ff @(posedge clk, negedge rst_n)
+		if(!rst_n)
+			state <= IDLE;
+		else
+			state <= nxt_state;
 
-/////////////////////////////////////////////////////////////////
-// Intentionally obfuscated model of UART_tx with 115200 baud //
-///////////////////////////////////////////////////////////////
-input clk,rst_n;		// clock and active low reset
-input trmt;				// trmt tells TX section to transmit tx_data
-input [7:0] tx_data;	// byte to transmit
-output TX, tx_done;		// tx_done asserted when transmission complete
-
-reg n001,n002;
-reg [8:0] n003;
-reg [3:0] n004;
-reg [8:0] n005;
-reg tx_done;
-
-reg n007, n008;
-
-wire n009;
-
-localparam N010 = 1'b0;
-localparam N011 = 1'b1;
-
-////////////////////////////
-// Infer n001 flop next //
-//////////////////////////
-always @(posedge clk or negedge rst_n)
-  if (!rst_n)
-    n001 <= N010;
-  else
-    n001 <= n002;
-
-
-/////////////////////////
-// Infer n004 next //
-///////////////////////
-always @(posedge clk or negedge rst_n)
-  if (!rst_n)
-    n004 <= 4'b0000;
-  else if (n007)
-    n004 <= 4'b0000;
-  else if (n009)
-    n004 <= n004+1;
-
-//////////////////////////
-// Infer n005 next //
-////////////////////////
-always @(posedge clk or negedge rst_n)
-  if (!rst_n)
-    n005 <= 434;
-  else if (n007 || n009)
-    n005 <= 434;
-  else if (n008)
-    n005 <= n005-1;
-
-////////////////////////////////
-// Infer n009 register next //
-//////////////////////////////
-always @(posedge clk or negedge rst_n)
-  if (!rst_n)
-    n003 <= 9'h1FF;
-  else if (n007)
-    n003 <= {tx_data,1'b0};
-  else if (n009)
-    n003 <= {1'b1,n003[8:1]};
-
-///////////////////////////////////////////////
-// Easiest to make tx_done a set/reset flop //
-/////////////////////////////////////////////
-always @(posedge clk or negedge rst_n)
-  if (!rst_n)
-    tx_done <= 1'b0;
-  else if (trmt)
-    tx_done <= 1'b0;
-  else if (n004==4'b1010)
-    tx_done <= 1'b1;
-
-
-always @(n001,trmt,n009,n004)
-  begin
-    //////////////////////////////////////
-    // Default assign all output of SM //
-    ////////////////////////////////////
-    n007         = 0;
-    n008 = 0;
-    n002    = N010;
-    
-    case (n001)
-      N010 : begin
-        if (trmt)
-          begin
-            n002 = N011;
-            n007 = 1;
-          end
-        else n002 = N010;
-      end
-      default : begin
-        if (n004==4'b1010)
-          n002 = N010;
-        else
-          n002 = N011;
-        n008 = 1;
-      end
-    endcase
-  end
-
-
-assign n009 = ~|n005;
-assign TX = n003[0];
-
+	// state machine
+	always_comb begin
+		nxt_state <= state;
+		init <= 0;
+		set_done <= 0;
+		transmitting <= 0;
+		case(state)
+			IDLE: begin
+				if(trmt) begin
+					nxt_state <= TRANSMIT;
+					init <= 1;
+				end
+			end
+			TRANSMIT: begin
+				transmitting <= 1;
+				if(bit_cnt == 10) begin
+					set_done <= 1;
+					transmitting <= 0;
+					nxt_state <= IDLE;
+				end
+			end
+			default:
+				nxt_state <= IDLE;
+		endcase
+	end
 endmodule
-
