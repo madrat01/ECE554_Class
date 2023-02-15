@@ -55,7 +55,7 @@ module queue_tb();
 	end
 
 	always
-		#5 clk = ~clk;
+		#1000 clk = ~clk;
 		
 	task automatic write(ref clk, ref [7:0] in_data, ref we, input [7:0] write_data);
 		begin
