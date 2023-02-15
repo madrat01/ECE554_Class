@@ -4,7 +4,7 @@ module queue_tb();
 	logic re, we;
 	logic empty, full;
 	
-	queue iDUT(.clk(clk), .rst_n(rst_n), .in_data(in_data), .re(re), .we(we), .out_data(out_data), .free_entries(), .empty(), .full());
+	queue iDUT(.clk(clk), .rst_n(rst_n), .in_data(in_data), .re(re), .we(we), .out_data(out_data), .free_entries(), .filled_entries(), .empty(), .full());
 
 	initial begin
 		clk = 0;
