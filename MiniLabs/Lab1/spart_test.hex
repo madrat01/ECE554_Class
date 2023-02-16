@@ -1,0 +1,85 @@
+@0000 B104	// llb R1, 0x04
+@0001 A1C0	// lhb R1, 0xC0
+@0002 B2B2	// llb R2, 0xB2
+@0003 9212	// sw  R2, R1, 2
+@0004 B201	// llb R2, 0x01
+@0005 9213	// sw  R2, R1, 3
+@0006 D020	// jal .ClearScreen
+@0007 D033	// jal .Hello_
+@0008 D040	// jal .World
+@0009 D029	// jal .NextLine
+@000a B300	// llb R3, 0x00
+@000b B401	// llb R4, 0x01
+@000c B50D	// llb R5, 0x0D
+@000d 8E11	// lw  R14, R1, 1
+@000e 5EE0	// sll R14, R14, 0
+@000f C1FD	// b   neq, .PollName
+@0010 8210	// lw  R2, R1, 0
+@0011 9230	// sw  R2, R3, 0
+@0012 0331	// add R3, R3, R1
+@0013 3225	// and R2, R2, R5
+@0014 C1F8	// b   neq, .PollName
+@0015 D025	// jal .Hello_
+@0016 B300	// llb R3, 0x00
+@0017 B609	// llb R6, 0x09
+@0018 8230	// lw  R2, R3, 0
+@0019 9210	// sw  R2, R1, 0
+@001a 8E11	// lw  R14, R1, 1
+@001b 6EE3	// srl R14, R14, 3
+@001c 2E6E	// sub R14, R6, R14
+@001d C401	// b   gt, PrintName_skip_wait
+@001e D003	// jal .WaitStatusReg
+@001f 5E20	// sll R14, R2, 0
+@0020 C1F7	// b   neq, .PrintName
+@0021 CFFF	// b   uncond, .done
+@0022 8E11	// lw  R14, R1, 1
+@0023 6EE3	// srl R14, R14, 3
+@0024 5EE0	// sll R14, R14, 0
+@0025 C1FC	// b   neq, .WaitStatusReg
+@0026 E0F0	// jr  R15
+@0027 B25E	// llb R2, 0x5E
+@0028 9210	// sw  R2, R1, 0
+@0029 B25B	// llb R2, 0x5B
+@002a 9210	// sw  R2, R1, 0
+@002b B25B	// llb R2, 0x5B
+@002c 9210	// sw  R2, R1, 0
+@002d B232	// llb R2, 0x32
+@002e 9210	// sw  R2, R1, 0
+@002f B24A	// llb R2, 0x4A
+@0030 9210	// sw  R2, R1, 0
+@0031 DFF0	// jal .WaitStatusReg
+@0032 E0F0	// jr  R15
+@0033 B25E	// llb R2, 0x5E
+@0034 9210	// sw  R2, R1, 0
+@0035 B25B	// llb R2, 0x5B
+@0036 9210	// sw  R2, R1, 0
+@0037 B245	// llb R2, 0x45
+@0038 9210	// sw  R2, R1, 0
+@0039 DFE8	// jal .WaitStatusReg
+@003a E0F0	// jr  R15
+@003b B220	// llb R2, 0x20
+@003c 9210	// sw  R2, R1, 0
+@003d B248	// llb R2, 0x48
+@003e 9210	// sw  R2, R1, 0
+@003f B265	// llb R2, 0x65
+@0040 9210	// sw  R2, R1, 0
+@0041 B26C	// llb R2, 0x6C
+@0042 9210	// sw  R2, R1, 0
+@0043 B26C	// llb R2, 0x6C
+@0044 9210	// sw  R2, R1, 0
+@0045 B26F	// llb R2, 0x6F
+@0046 9210	// sw  R2, R1, 0
+@0047 DFDA	// jal .WaitStatusReg
+@0048 E0F0	// jr  R15
+@0049 B257	// llb R2, 0x57
+@004a 9210	// sw  R2, R1, 0
+@004b B26F	// llb R2, 0x6F
+@004c 9210	// sw  R2, R1, 0
+@004d B272	// llb R2, 0x72
+@004e 9210	// sw  R2, R1, 0
+@004f B26C	// llb R2, 0x6C
+@0050 9210	// sw  R2, R1, 0
+@0051 B264	// llb R2, 0x64
+@0052 9210	// sw  R2, R1, 0
+@0053 DFCE	// jal .WaitStatusReg
+@0054 E0F0	// jr  R15

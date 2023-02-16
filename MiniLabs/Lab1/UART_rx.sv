@@ -1,8 +1,8 @@
-module UART_rx(input clk, input rst_n, input RX, input clr_rdy, output [7:0]rx_data, output logic rdy);
+module UART_rx(input clk, input rst_n, input RX, input clr_rdy, input [12:0]baud_rate, output [7:0]rx_data, output logic rdy);
 	// internal signals
 	logic start, shift, receiving, set_rdy;
 	logic [3:0] bit_cnt;
-	logic [11:0] baud_cnt;
+	logic [12:0] baud_cnt;
 	logic [8:0] rx_shft_reg;
 	
 	// states
@@ -39,9 +39,9 @@ module UART_rx(input clk, input rst_n, input RX, input clr_rdy, output [7:0]rx_d
 		if(!rst_n)
 			baud_cnt <= 0;
 		else if(start)
-			baud_cnt <= 1302;
+			baud_cnt <= baud_rate >> 1;
 		else if(shift)
-			baud_cnt <= 2604;
+			baud_cnt <= baud_rate;
 		else if(receiving)
 			baud_cnt <= baud_cnt - 1;
 		else

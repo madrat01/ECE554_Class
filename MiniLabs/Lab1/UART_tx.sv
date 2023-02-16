@@ -1,15 +1,15 @@
-module UART_tx(input clk, input rst_n, output TX, input trmt, input [7:0]tx_data, output logic tx_done);
+module UART_tx(input clk, input rst_n, output TX, input trmt, input [7:0]tx_data, input [12:0]baud_rate, output logic tx_done);
 	// internal signals
 	logic init, shift, transmitting, set_done;
 	logic [8:0] tx_shft_reg;
 	logic [3:0] bit_cnt;
-	logic [11:0] baud_cnt;
+	logic [12:0] baud_cnt;
 	
 	// states
 	typedef enum logic {IDLE, TRANSMIT} state_t;
 	state_t state, nxt_state;
 						 
-	assign shift = baud_cnt == 12'd2604 ? 1'b1 : 1'b0;
+	assign shift = baud_cnt == 0 ? 1'b1 : 1'b0;
 	
 	assign TX = tx_shft_reg[0];
 				
@@ -41,9 +41,9 @@ module UART_tx(input clk, input rst_n, output TX, input trmt, input [7:0]tx_data
 		if(!rst_n)
 			baud_cnt <= 0;
 		else if(init | shift)
-			baud_cnt <= 0;
+			baud_cnt <= baud_rate;
 		else if(transmitting)
-			baud_cnt <= baud_cnt + 1;
+			baud_cnt <= baud_cnt - 1;
 		else
 			baud_cnt <= baud_cnt;
 			

@@ -49,6 +49,9 @@ logic [7:0] RX_re, RX_we;            // RX Buffer read enable and write enable
 logic [7:0] TX_data_in, TX_data_out; // TX Buffer In and Out data
 logic [7:0] TX_re, TX_we;            // TX Buffer read enable and write enable
 
+// Baud Rate for UART
+logic [12:0] baud_rate;
+
 // UART RX signals
 logic       UART_RX_RX;				 // rx is the asynch serial input (need to double flop)
 logic       UART_RX_clr_rdy;		 // rdy can be cleared by this or n007 of new byte
@@ -94,6 +97,7 @@ UART_rx iUART_RX (
     .rst_n      (rst_n),
     .RX         (UART_TX_RX),
     //.clr_rdy    (UART_RX_clr_rdy),
+    .baud_rate  (baud_rate),
     .clr_rdy    (1'b0),
     // Outputs
     .rx_data    (UART_RX_rx_data),
@@ -129,6 +133,7 @@ UART_tx iUART_TX (
     .rst_n      (rst_n),
     .trmt       (UART_TX_trmt),
     .tx_data    (UART_TX_tx_data),
+    .baud_rate  (baud_rate),
     // Outputs
     .tx_done    (UART_TX_tx_done),
     .TX         (UART_TX_TX)
@@ -171,5 +176,11 @@ queue TX_BUF (
     .empty          (tx_q_empty),
     .full           (tx_q_full)
 );
-				   
+
+// Baud rate
+assign baud_rate = {db_high_reg[4:0], db_low_reg[7:0]};
+
+// Tri-state buffered databus. Output the 
+assign databus = iorw_n ? RX_data_out : 8'hzz;
+
 endmodule
