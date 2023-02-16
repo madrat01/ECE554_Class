@@ -39,5 +39,6 @@ UART_rx iRX(.clk(clk), .rst_n(rst_n), .RX(RX), .clr_rdy(clr_rdy), .baud_rate(bau
 
 assign baud_rate = {db_high_reg[4:0], db_low_reg[7:0]};
 
+assign databus = iorw_n ? out_data : 8'hzz;
 
 endmodule
