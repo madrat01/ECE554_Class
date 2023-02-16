@@ -121,6 +121,8 @@ module MiniLab1(
 
     assign rdata = mm_re && addr == 16'hC000 ? SW_rdata :
                    mm_re && (addr == 16'hC004 || addr == 16'hC005) ? SPART_rdata : 16'hbeef;
+				   
+	assign databus = ~iorw_n ? wdata[7:0] : 8'hzz;
 
 	// Instantiate reset synchronizer
 	rst_synch iRST(.RST_n(RST_n), .rst_n(rst_n), .clk(clk));
