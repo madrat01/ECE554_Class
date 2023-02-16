@@ -9,7 +9,7 @@ module UART_tx(input clk, input rst_n, output TX, input trmt, input [7:0]tx_data
 	typedef enum logic {IDLE, TRANSMIT} state_t;
 	state_t state, nxt_state;
 						 
-	assign shift = baud_cnt == 12'd2604 ? 1'b1 : 1'b0;
+	assign shift = baud_cnt == 0 ? 1'b1 : 1'b0;
 	
 	assign TX = tx_shft_reg[0];
 				
