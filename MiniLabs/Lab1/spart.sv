@@ -30,5 +30,14 @@ module spart(
     input RX				// UART RX line
     );
 
-				   
+//db_low_reg
+//db_high_reg
+logic [12:0] baud_rate;
+
+UART_tx iTX(.clk(clk), .rst_n(rst_n), .TX(TX), .trmt(trmt), .tx_data(tx_data), .baud_rate(baud_rate), .tx_done(tx_done);
+UART_rx iRX(.clk(clk), .rst_n(rst_n), .RX(RX), .clr_rdy(clr_rdy), .baud_rate(baud_rate), .rx_data(rx_data), .rdy(rdy));
+
+assign baud_rate = {db_high_reg[4:0], db_low_reg[7:0]};
+
+
 endmodule
