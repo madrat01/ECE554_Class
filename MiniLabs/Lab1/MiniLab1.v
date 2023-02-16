@@ -129,6 +129,17 @@ module MiniLab1(
 	cpu iCPU(.rst_n(rst_n), .clk(clk), .wdata(wdata), .we(we), .addr(addr), .re(re), .rdata(rdata));
 	
     // Instantiate SPART
-	//spart iSPART(.rst_n(rst_n), .clk(clk), .iocs_n(iocs_n), .iorw_n(iorw_n), .ioaddr(ioaddr), .rx_q_empty(rx_q_empty), .tx_q_full(tx_q_full));
+    spart iSpart (
+        .clk    (clk),
+        .rst_n  (rst_n),
+        .iocs_n (iocs_n),
+        .iorw_n (iorw_n),
+        .tx_q_full  (tx_q_full),
+        .rx_q_empty (rx_q_empty),
+        .ioaddr     (ioaddr),
+        .databus    (databus),
+        .TX         (TX),
+        .RX         (RX)
+    );
 
 endmodule

@@ -2,15 +2,31 @@ module spart_tb;
 
 logic       clk;
 logic       rst_n;
+wire  [7:0] databus_in;        // An 8-bit, 3-state bidirectional bus used to transfer data and control information between the Processor and the SPART.
 logic [7:0] databus;        // An 8-bit, 3-state bidirectional bus used to transfer data and control information between the Processor and the SPART.
 logic [1:0] ioaddr;         // A 2-bit address bus used to select the particular register that interacts with the databus during an I/O operation
 logic       iorw_n;         // Determines the direction of data transfer between the Processor and SPART. For a read (iorw_n=1), data is transferred from the SPART to the Processor and for a write (iorw_n=0), data is transferred from the processor to the SPART
 logic       iocs_n;         // Active low chip select. Writes or reads to registers have no effect unless active
 logic       rx_q_empty;     // If 1 then no receive data present to read
 logic       tx_q_full;      // If 1 then transmit queue is full and cannot accept anymore bytes
+logic       TX;			    // UART TX line
+logic       RX;			    // UART RX line
 
 // Instantiate spart module
-//spart iSpart ();
+spart iSpart (
+    .clk    (clk),
+    .rst_n  (rst_n),
+    .iocs_n (iocs_n),
+    .iorw_n (iorw_n),
+    .tx_q_full  (tx_q_full),
+    .rx_q_empty (rx_q_empty),
+    .ioaddr     (ioaddr),
+    .databus    (databus_in),
+    .TX         (TX),
+    .RX         (RX)
+);
+
+assign databus_in = databus;
 
 initial begin
     clk = 0;
@@ -37,6 +53,7 @@ initial begin
     repeat (2) @ (negedge clk);
     // TODO Baud Rate Configuration
     // TODO unselect chip and try changing the register, reading from buffers and registers
+    $stop();
 end
 
 always begin
@@ -50,21 +67,23 @@ task automatic stress_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref l
     logic [7:0] buffer_data [$:8];
     logic [7:0] buffer_front;
     // Write buffer till the queue is full
+    $display("========= Start Stressing TX and RX Buffer ===========");
     while (~tx_q_full) begin
         @ (negedge clk);
         // Call task to write the buffer
         write_spart_buffer (iorw_n, databus);
         // Capture the written data which will be used in the self check when we read the buffer 
         buffer_data = {buffer_data, databus};
+        $display("Buffered data %p", buffer_data);
     end
     @ (negedge clk);
     // Read the buffer status
     select_status_register_read(ioaddr, iorw_n);
     @ (posedge clk);
     if (databus[7:4] == 0)
-        $display("PASS! TX Queue is full!");     
+        $display("PASS! TX Queue has data!");     
     else
-        $display("ERROR! TX Queue is not full!");
+        $display("ERROR! TX Queue has no data!");
     // Start to read the RX queue after TODO cycles
     repeat (100) @ (negedge clk);
     // Read the buffer status
@@ -98,12 +117,14 @@ task automatic stress_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref l
     else
         $display("ERROR! RX Queue is not empty!");
     select_buffer_rd_wr(ioaddr);
+    $display("========= End Stressing TX and RX Buffer ===========");
 endtask 
 
 // Write and read at different baud rates
 task automatic random_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref logic iorw_n, ref logic tx_q_full, ref logic rx_q_empty, ref logic [7:0] databus);
     logic [7:0] buffer_data [$:8];
     logic [7:0] buffer_front;
+    $display("========= Start Accessing TX and RX Buffer with different Baud rates ===========");
     while (~tx_q_full) begin
         @ (negedge clk);
         write_spart_buffer(iorw_n, databus);
@@ -132,6 +153,7 @@ task automatic random_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref l
         else
             $display("Read and write data mismatch, READ DATA = %h, WRITE DATA = %h", databus, buffer_front);
     end 
+    $display("========= End Accessing TX and RX Buffer with different Baud rates ===========");
 endtask
 
 // Write the buffer
