@@ -26,6 +26,8 @@ spart iSpart (
     .RX         (RX)
 );
 
+assign RX = TX;
+
 assign databus_in = databus;
 
 initial begin
@@ -57,7 +59,7 @@ initial begin
 end
 
 always begin
-    #10000 clk = ~clk;
+    #100 clk = ~clk;
 end
 
 // Tasks to stress spart
