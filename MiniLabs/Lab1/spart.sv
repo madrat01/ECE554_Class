@@ -73,7 +73,7 @@ always_ff @ (posedge clk, negedge rst_n) begin
         db_low_reg       <= 8'hB2;  // Default DB (Low)
         db_high_reg      <= 8'h01;  // Default DB (High)
     end
-    else if (~iorw_n) begin
+    else if (~iorw_n & ~iocs_n) begin
         case (ioaddr)
             2'b00 : tx_rx_buffer_reg <= databus;  
             2'b10 : db_low_reg       <= databus;
@@ -106,7 +106,7 @@ UART_rx iUART_RX (
 
 // Assigning RX queue values
 assign RX_data_in    = UART_RX_rx_data;             // Data written in RX is from UART_rx
-assign RX_re         = iorw_n & ~|ioaddr;   // Read data from RXX when IO Read/Write is high and ioaddr matches the Buffer read/write register
+assign RX_re         = iorw_n & ~|ioaddr & ~iocs_n;   // Read data from RXX when IO Read/Write is high and ioaddr matches the Buffer read/write register
 assign RX_we         = UART_RX_rdy;                 // We are ready to write in the RX buffer when UART_RX asserts the ready signal
 
 queue RX_BUF (
@@ -124,7 +124,9 @@ queue RX_BUF (
     .full           (rx_q_full)
 );
 
+// UART TX starts trasmiting when we have data in the buffer. This doesn't need to a state machine since trmt is checked only at the IDLE state in the UART TX.
 assign UART_TX_trmt = ~tx_q_empty;  // Transmit to UART_TX when the TX buffer is not empty
+// Data transmitted to UART TX is from the TX buffer
 assign UART_TX_tx_data = TX_data_out; // Data to the UART_TX from the buffer out data 
 
 UART_tx iUART_TX (
@@ -139,8 +141,10 @@ UART_tx iUART_TX (
     .TX         (UART_TX_TX)
 );
 
+// Data incoming in the TX buffer is from databus
 assign TX_data_in = databus; 
-assign TX_we = ~iorw_n & ~|ioaddr;
+// TX Buffer is written when IO write is enabled, IOADDR == 00 and Chip is selected
+assign TX_we = ~iorw_n & ~|ioaddr & ~iocs_n;
 
 always_ff @ (posedge clk, negedge rst_n)
     if (~rst_n)
@@ -148,6 +152,9 @@ always_ff @ (posedge clk, negedge rst_n)
     else
         tx_buf_read <= tx_buf_read_nxt;
 
+// TX Buf Read Enabled when -
+// 1. We have data in the buffer & we are not already transmitting some data (in UART TX)
+// 2. We have completed transmiting data (tx_done) and we have some data in the buffer  
 always_comb begin
     TX_re = 0;
     case (tx_buf_read)
@@ -180,8 +187,10 @@ queue TX_BUF (
 // Baud rate
 assign baud_rate = {db_high_reg[4:0], db_low_reg[7:0]};
 
-// Tri-state buffered databus. Output the 
-assign databus = iorw_n & ioaddr == 2'b00   ? RX_data_out   : 
-                 iorw_n & ioaddr == 2'b01   ? status_reg    : 8'hzz;
+// Tri-state buffered databus. Output the read of the registers when IO read is enabled, chip is selected and the IOADDR matches the register address. 
+assign databus = iorw_n & ~iocs_n & ~|ioaddr        ? RX_data_out   : 
+                 iorw_n & ~iocs_n & ioaddr == 2'b01 ? status_reg    :
+                 iorw_n & ~iocs_n & ioaddr == 2'b10 ? db_low_reg    :
+                 iorw_n & ~iocs_n & ioaddr == 2'b11 ? db_high_reg   : 8'hzz;
 
 endmodule

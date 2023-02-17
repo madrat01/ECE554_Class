@@ -116,6 +116,9 @@ module MiniLab1(
     // iocs_n is active low
     assign iocs_n = ~(addr[15:2] == 14'b1100_0000_0000_01);
 
+	// Write to spart when IO write is enabled. Tri-buf since databus is a bi-directional bus.	
+	assign databus = ~iorw_n ? wdata[7:0] : 8'hzz;
+
 //========================================================
 //  Module Instantiations
 //========================================================
@@ -123,8 +126,6 @@ module MiniLab1(
     assign rdata = mm_re && addr == 16'hC000 ? SW_rdata :
                    mm_re && (addr == 16'hC004 || addr == 16'hC005) ? SPART_rdata : 16'hbeef;
 				   
-	assign databus = ~iorw_n ? wdata[7:0] : 8'hzz;
-
 	// Instantiate reset synchronizer
 	rst_synch iRST(.RST_n(RST_n), .rst_n(rst_n), .clk(clk));
 	

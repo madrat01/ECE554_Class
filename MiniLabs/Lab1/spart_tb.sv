@@ -35,12 +35,14 @@ initial begin
     clk = 0;
     // Non-reset mode
     rst_n = 1;
+    // Defaut to buffer read mode so that we don't write unnecessarily
+    iorw_n = 1;
+    // Default to not selecting spart
+    iocs_n = 1;
     repeat (2) @ (negedge clk);
     // Assert reset
     rst_n = 0;
-    // Defaut to buffer read mode so that we don't write unnecessarily
-    iorw_n = 1;
-    // Default to chip select
+    // Chip select
     select_spart(iocs_n);
     databus = 'h66;
     repeat (2) @ (negedge clk);
@@ -50,12 +52,78 @@ initial begin
     select_buffer_rd_wr(ioaddr);
     repeat (2) @ (negedge clk);
     // Fully write and read the buffer
-    stress_rd_wr_buffer(clk, ioaddr, iorw_n, tx_q_full, rx_q_empty, databus);
+    $display("========= Start Stressing TX and RX Buffer ===========");
+    stress_rd_wr_buffer(clk, ioaddr, iorw_n, iocs_n, tx_q_full, rx_q_empty, databus);
+    $display("========= End Stressing TX and RX Buffer ===========");
     // Read and write with different baud rates
+    $display("========= Start Accessing TX and RX Buffer with dassertferent Baud rates ===========");
     random_rd_wr_buffer(clk, ioaddr, iorw_n, tx_q_full, rx_q_empty, databus);
+    $display("========= End Accessing TX and RX Buffer with dassertferent Baud rates ===========");
     repeat (2) @ (negedge clk);
-    // TODO Baud Rate Configuration
-    // TODO unselect chip and try changing the register, reading from buffers and registers
+    // Change Baud Rate and test read and write to the buffer
+    $display("========= Start Baud Rate Change Test ===========");
+    @ (negedge clk);
+    select_db_low_div_buffer_write(ioaddr, iorw_n);
+    databus = 'h36;
+    @ (negedge clk);
+    select_db_high_div_buffer_write(ioaddr, iorw_n);
+    databus = 'h00;
+    @ (negedge clk);
+    // Fully write and read the buffer
+    stress_rd_wr_buffer(clk, ioaddr, iorw_n, iocs_n, tx_q_full, rx_q_empty, databus);
+    $display("========== End Baud Rate Change Test ===========");
+    @ (negedge clk);
+    $display("========== Start Un-Select SPART Test ===========");
+    // Unselect the spart and change the baud rate register. Read back data and check if the write has gone through.
+    unselect_spart(iocs_n);
+    @ (negedge clk);
+    select_db_low_div_buffer_write(ioaddr, iorw_n);
+    databus = 'h64;
+    @ (negedge clk);
+    // Probe the register directly and check if the value has been written
+    assert (iSpart.db_low_reg[7:0] === 'h36)
+        $display("PASS! DB (Low) register is not written when chip is unselected");
+    else
+        $error("FAIL! DB (Low) register is written even when chip is unselected");
+    // Read from the data bus and check if we are expecting zzz. 
+    select_db_low_div_buffer_read(ioaddr, iorw_n);
+    @ (posedge clk);
+    assert (databus[7:0] === 'z)
+        $display("PASS! DB (Low) register read has not gone through");
+    else
+        $error("FAIL! DB (Low) register read has gone through");
+    @ (negedge clk);
+    select_db_high_div_buffer_write(ioaddr, iorw_n);
+    databus = 'h03;
+    @ (negedge clk);
+    // Probe the register directly and check if the value has been written
+    assert (iSpart.db_high_reg[7:0] === 'h00)
+        $display("PASS! DB (High) register is not written when chip is unselected");
+    else
+        $error("FAIL! DB (High) register is written even when chip is unselected");
+    select_db_high_div_buffer_read(ioaddr, iorw_n);
+    @ (posedge clk);
+    assert (databus[7:0] === 'z)
+        $display("PASS! DB (High) register read has not gone through");
+    else
+        $error("FAIL! DB (High) register read gone through");
+    @ (negedge clk);
+    // Unselect the spart and read the status register. The databus should not contain a value, only zzzz.
+    select_status_register_read(ioaddr, iorw_n);
+    @ (posedge clk);
+    assert (databus === 'z)
+        $display("PASS! Status register read shouldn't have gone through. Output zz. Actual %h", iSpart.status_reg);
+    else
+        $error("FAIL! Status register read has gone through. Output value %h", databus);
+    // Write to the TX buffer should also not go through
+    // Select the buffer read/write ioaddr
+    select_buffer_rd_wr(ioaddr);
+    // Call task to write the buffer
+    write_spart_buffer (iorw_n, databus);
+    @ (negedge clk);
+    // TODO check that the status register has not changed
+    $display("====== End Un-Select SPART Test =======");
+    @ (negedge clk);    
     $stop();
 end
 
@@ -69,13 +137,14 @@ end
 // Tasks to stress spart
 
 // Stress write and read of the buffer
-task automatic stress_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref logic iorw_n, ref logic tx_q_full, ref logic rx_q_empty, ref logic [7:0] databus);
+task automatic stress_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref logic iorw_n, ref logic iocs_n, ref logic tx_q_full, ref logic rx_q_empty, ref logic [7:0] databus);
     logic [7:0] buffer_data [$:7];
     logic [7:0] buffer_front;
     // Write buffer till the queue is full
-    $display("========= Start Stressing TX and RX Buffer ===========");
     while (~tx_q_full) begin
         @ (negedge clk);
+        // Select the buffer read/write ioaddr
+        select_buffer_rd_wr(ioaddr);
         // Call task to write the buffer
         write_spart_buffer (iorw_n, databus);
         // Capture the written data which will be used in the self check when we read the buffer 
@@ -126,17 +195,16 @@ task automatic stress_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref l
     else
         $error("ERROR! RX Queue is not Empty!");
     select_buffer_rd_wr(ioaddr);
-    $display("========= End Stressing TX and RX Buffer ===========");
 endtask 
 
 // Write and read at different baud rates
 task automatic random_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref logic iorw_n, ref logic tx_q_full, ref logic rx_q_empty, ref logic [7:0] databus);
     logic [7:0] buffer_data [$:7];
     logic [7:0] buffer_front;
-    $display("========= Start Accessing TX and RX Buffer with different Baud rates ===========");
-    select_buffer_rd_wr(ioaddr);
     while (~tx_q_full) begin
         @ (negedge clk);
+        // Select the buffer read/write ioaddr
+        select_buffer_rd_wr(ioaddr);
         write_spart_buffer(iorw_n, databus);
         // Capture the written data which will be used in the self check when we read the buffer 
         if (~tx_q_full)
@@ -153,10 +221,10 @@ task automatic random_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref l
         $error("ERROR! TX Queue has no data!");
     @ (negedge clk);
     // change baud rate
-    select_db_low_div_buffer(ioaddr);
+    select_db_low_div_buffer_write(ioaddr, iorw_n);
     databus = 'hd9;
     @ (negedge clk);
-    select_db_high_div_buffer(ioaddr);
+    select_db_high_div_buffer_write(ioaddr, iorw_n);
     databus = 'h00; 
     @ (negedge clk);
     // The RX queue is filled faster than the default since the baud rate has increased
@@ -182,7 +250,6 @@ task automatic random_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref l
             else
                 $error("ERROR! Read and write data mismatch, READ DATA = %d, WRITE DATA = %d", databus, buffer_front);
     end 
-    $display("========= End Accessing TX and RX Buffer with dassertferent Baud rates ===========");
 endtask
 
 // Write the buffer
@@ -218,14 +285,26 @@ task automatic select_status_register_read (ref logic [1:0] ioaddr, ref logic io
 endtask
 
 // This task selects DB low division buffer
-task automatic select_db_low_div_buffer (ref logic [1:0] ioaddr);
+task automatic select_db_low_div_buffer_write (ref logic [1:0] ioaddr, ref logic iorw_n);
     iorw_n = 'b0;
     ioaddr = 'b10;
 endtask
 
 // This task selects SB high division buffer
-task automatic select_db_high_div_buffer (ref logic [1:0] ioaddr);
+task automatic select_db_high_div_buffer_write (ref logic [1:0] ioaddr, ref logic iorw_n);
     iorw_n = 'b0;
+    ioaddr = 'b11;
+endtask
+
+// This task selects DB low division buffer
+task automatic select_db_low_div_buffer_read (ref logic [1:0] ioaddr, ref logic iorw_n);
+    iorw_n = 'b1;
+    ioaddr = 'b10;
+endtask
+
+// This task selects SB high division buffer
+task automatic select_db_high_div_buffer_read (ref logic [1:0] ioaddr, ref logic iorw_n);
+    iorw_n = 'b1;
     ioaddr = 'b11;
 endtask
 

@@ -32,7 +32,7 @@ reg [15:0]mem[0:15];					// 16 registers each 16-bit wide
 //end
 
 //////////////////////////////////
-// RF is written on clock high //
+// RF is written on negedge clock //
 ////////////////////////////////
 always @(negedge clk) begin
   if (we && |dst_addr)
@@ -40,7 +40,7 @@ always @(negedge clk) begin
 end
 	
 //////////////////////////////
-// RF is read on clock low //
+// RF is read on negedge clock //
 ////////////////////////////
 always @(negedge clk)
   if (re0)
