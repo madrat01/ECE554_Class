@@ -87,20 +87,20 @@ task automatic stress_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref l
     // Read the buffer status to determine is TX queue has data
     select_status_register_read(ioaddr, iorw_n);
     @ (posedge clk);
-    if (databus[7:4] < 'd8)
+    assert (databus[7:4] < 'd8)
         $display("PASS! TX Queue has data!");     
     else
-        $display("ERROR! TX Queue has no data!");
+        $error("ERROR! TX Queue has no data!");
     
     // Start to read the RX queue
     repeat (40000) @ (negedge clk);
     // Read the buffer status to determine is RX queue is full
     select_status_register_read(ioaddr, iorw_n);
     @ (posedge clk);
-    if (databus[3:0] == 8)
+    assert (databus[3:0] == 8)
         $display("PASS! RX Queue is full!");     
     else
-        $display("ERROR! RX Queue is not full!");
+        $error("ERROR! RX Queue is not full!");
     select_buffer_rd_wr(ioaddr);
     // Read buffer till the queue is empty
     while (~rx_q_empty) begin
@@ -112,19 +112,19 @@ task automatic stress_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref l
         // Compare the buffered data and the data we wrote
         buffer_front = buffer_data.pop_front();
         if (~rx_q_empty)
-            if (buffer_front == databus)
+            assert (buffer_front == databus)
                 $display("PASS! Succuesfully read data from the buffer, READ DATA = %d", databus);
             else
-                $display("ERROR! Read and write data mismatch, READ DATA = %d, WRITE DATA = %d", databus, buffer_front);
+                $error("ERROR! Read and write data mismatch, READ DATA = %d, WRITE DATA = %d", databus, buffer_front);
     end
     @ (negedge clk);
     // Read the buffer status to confirm that the RX queue is empty
     select_status_register_read(ioaddr, iorw_n);
     @ (posedge clk);
-    if (databus[3:0] == 0)
+    assert (databus[3:0] == 0)
         $display("PASS! RX Queue is Empty!");     
     else
-        $display("ERROR! RX Queue is not Empty!");
+        $error("ERROR! RX Queue is not Empty!");
     select_buffer_rd_wr(ioaddr);
     $display("========= End Stressing TX and RX Buffer ===========");
 endtask 
@@ -147,26 +147,29 @@ task automatic random_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref l
     // Read the buffer status
     select_status_register_read(ioaddr, iorw_n);
     @ (posedge clk);
-    if (databus[7:4] < 'd8)
+    assert (databus[7:4] < 'd8)
         $display("PASS! TX Queue has data!");     
     else
-        $display("ERROR! TX Queue has no data!");
+        $error("ERROR! TX Queue has no data!");
     @ (negedge clk);
     // change baud rate
     select_db_low_div_buffer(ioaddr);
-    databus = 'h58;
+    databus = 'hd9;
     @ (negedge clk);
     select_db_high_div_buffer(ioaddr);
-    databus = 'h14; 
+    databus = 'h00; 
+    @ (negedge clk);
+    // The RX queue is filled faster than the default since the baud rate has increased
     repeat (20000) @ (negedge clk);
     // Read the buffer status to determine is RX queue is full
     select_status_register_read(ioaddr, iorw_n);
     @ (posedge clk);
-    if (databus[3:0] == 8)
-        $display("PASS! RX Queue is full!");     
+    assert (databus[3:0] == 8)
+        $display("PASS! RX Queue is full! The Baud Rate increase has worked!");     
     else
-        $display("ERROR! RX Queue is not full!");
-    $display("rx_q_empty %h", rx_q_empty);
+        $error("ERROR! RX Queue is not full! Umm Baud Rate Why??");
+    // Select the buffer read/write ioaddr
+    select_buffer_rd_wr(ioaddr);
     while (~rx_q_empty) begin
         @ (negedge clk);
         read_spart_buffer(iorw_n);
@@ -174,12 +177,12 @@ task automatic random_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref l
         // Compare the buffered data and the data we wrote
         buffer_front = buffer_data.pop_front();
         if (~rx_q_empty)
-            if (buffer_front == databus)
-                $display("Succuesfully read data from the buffer, READ DATA = %h", databus);
+            assert (buffer_front == databus)
+                $display("PASS! Succuesfully read data from the buffer, READ DATA = %d", databus);
             else
-                $display("Read and write data mismatch, READ DATA = %h, WRITE DATA = %h", databus, buffer_front);
+                $error("ERROR! Read and write data mismatch, READ DATA = %d, WRITE DATA = %d", databus, buffer_front);
     end 
-    $display("========= End Accessing TX and RX Buffer with different Baud rates ===========");
+    $display("========= End Accessing TX and RX Buffer with dassertferent Baud rates ===========");
 endtask
 
 // Write the buffer
