@@ -27,11 +27,12 @@ module MiniLab1(
 
 	wire   [15:0]	addr;		// Memory address being written
 	wire   [15:0]	wdata;		// Data being written
-	reg    [15:0]	rdata;		// Read data from MM
-	reg    [15:0]	SW_rdata;   // Read data from SW
+	wire   [15:0]	rdata;		// Read data from MM
+	wire   [15:0]	SW_rdata;   // Read data from SW
 	wire            we, re;				// Write enable and read enable from CPU
 	wire            rst_n;				// Synchronized rst_n to CPU from rst_synch
 	wire            mm_we, mm_re;		// Qualified memory maaped write enable and read enable
+	wire   [15:0]	SPART_rdata;   // Read data from SPART
     wire   [7:0]    databus;    // An 8-bit, 3-state bidirectional bus used to transfer data and control information between the Processor and the SPART.
     reg    [1:0]    ioaddr;     // A 2-bit address bus used to select the particular register that interacts with the databus during an I/O operation
     wire            iorw_n;     // Determines the direction of data transfer between the Processor and SPART. For a read (iorw_n=1), data is transferred from the SPART to the Processor and for a write (iorw_n=0), data is transferred from the processor to the SPART
