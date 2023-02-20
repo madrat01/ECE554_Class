@@ -51,17 +51,24 @@ initial begin
     // Set up the buffer to read and write
     select_buffer_rd_wr(ioaddr);
     repeat (2) @ (negedge clk);
-    // Fully write and read the buffer
+    ///////////////////////////////////////////////////////////
+    // Fully write the TX buffer and read the RX buffer
+    ///////////////////////////////////////////////////////////
     $display("========= Start Stressing TX and RX Buffer ===========");
     stress_rd_wr_buffer(clk, ioaddr, iorw_n, iocs_n, tx_q_full, rx_q_empty, databus);
     $display("========= End Stressing TX and RX Buffer ===========");
+    ///////////////////////////////////////////////////////////
     // Read and write with different baud rates
+    ///////////////////////////////////////////////////////////
     $display("========= Start Accessing TX and RX Buffer with dassertferent Baud rates ===========");
     random_rd_wr_buffer(clk, ioaddr, iorw_n, tx_q_full, rx_q_empty, databus);
     $display("========= End Accessing TX and RX Buffer with dassertferent Baud rates ===========");
     repeat (2) @ (negedge clk);
+    ///////////////////////////////////////////////////////////
     // Change Baud Rate and test read and write to the buffer
+    ///////////////////////////////////////////////////////////
     $display("========= Start Baud Rate Change Test ===========");
+    // Change baud rate to h'0036.
     @ (negedge clk);
     select_db_low_div_buffer_write(ioaddr, iorw_n);
     databus = 'h36;
@@ -69,59 +76,15 @@ initial begin
     select_db_high_div_buffer_write(ioaddr, iorw_n);
     databus = 'h00;
     @ (negedge clk);
-    // Fully write and read the buffer
+    // Fully write and read the buffer. The RX buffer should fill much faster than before since the transmission has a higher baud rate.
     stress_rd_wr_buffer(clk, ioaddr, iorw_n, iocs_n, tx_q_full, rx_q_empty, databus);
     $display("========== End Baud Rate Change Test ===========");
     @ (negedge clk);
+    ///////////////////////////////////////////////////////////
+    // Unselect spart and write/read to the various registers
+    ///////////////////////////////////////////////////////////
     $display("========== Start Un-Select SPART Test ===========");
-    // Unselect the spart and change the baud rate register. Read back data and check if the write has gone through.
-    unselect_spart(iocs_n);
-    @ (negedge clk);
-    select_db_low_div_buffer_write(ioaddr, iorw_n);
-    databus = 'h64;
-    @ (negedge clk);
-    // Probe the register directly and check if the value has been written
-    assert (iSpart.db_low_reg[7:0] === 'h36)
-        $display("PASS! DB (Low) register is not written when chip is unselected");
-    else
-        $error("FAIL! DB (Low) register is written even when chip is unselected");
-    // Read from the data bus and check if we are expecting zzz. 
-    select_db_low_div_buffer_read(ioaddr, iorw_n);
-    @ (posedge clk);
-    assert (databus[7:0] === 'z)
-        $display("PASS! DB (Low) register read has not gone through");
-    else
-        $error("FAIL! DB (Low) register read has gone through");
-    @ (negedge clk);
-    select_db_high_div_buffer_write(ioaddr, iorw_n);
-    databus = 'h03;
-    @ (negedge clk);
-    // Probe the register directly and check if the value has been written
-    assert (iSpart.db_high_reg[7:0] === 'h00)
-        $display("PASS! DB (High) register is not written when chip is unselected");
-    else
-        $error("FAIL! DB (High) register is written even when chip is unselected");
-    select_db_high_div_buffer_read(ioaddr, iorw_n);
-    @ (posedge clk);
-    assert (databus[7:0] === 'z)
-        $display("PASS! DB (High) register read has not gone through");
-    else
-        $error("FAIL! DB (High) register read gone through");
-    @ (negedge clk);
-    // Unselect the spart and read the status register. The databus should not contain a value, only zzzz.
-    select_status_register_read(ioaddr, iorw_n);
-    @ (posedge clk);
-    assert (databus === 'z)
-        $display("PASS! Status register read shouldn't have gone through. Output zz. Actual %h", iSpart.status_reg);
-    else
-        $error("FAIL! Status register read has gone through. Output value %h", databus);
-    // Write to the TX buffer should also not go through
-    // Select the buffer read/write ioaddr
-    select_buffer_rd_wr(ioaddr);
-    // Call task to write the buffer
-    write_spart_buffer (iorw_n, databus);
-    @ (negedge clk);
-    // TODO check that the status register has not changed
+    unselect_spart_test(iocs_n, ioaddr, iorw_n, databus);
     $display("====== End Un-Select SPART Test =======");
     @ (negedge clk);    
     $stop();
@@ -250,6 +213,70 @@ task automatic random_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref l
             else
                 $error("ERROR! Read and write data mismatch, READ DATA = %d, WRITE DATA = %d", databus, buffer_front);
     end 
+endtask
+
+// Unselect SPART and test change of:
+// 1. Baud Register
+// 2. Status Register
+// 3. Write to the buffer
+task automatic unselect_spart_test(ref logic iocs_n, ref logic [1:0] ioaddr, ref logic iorw_n, ref logic [7:0] databus);
+    logic [7:0] prev_status_reg_value;
+    // Unselect the spart and change the baud rate register. Read back data and check if the write has gone through.
+    unselect_spart(iocs_n);
+    @ (negedge clk);
+    select_db_low_div_buffer_write(ioaddr, iorw_n);
+    databus = 'h64;
+    @ (negedge clk);
+    // Probe the register directly and check if the value has been written
+    assert (iSpart.db_low_reg[7:0] === 'h36)
+        $display("PASS! DB (Low) register is not written when chip is unselected");
+    else
+        $error("FAIL! DB (Low) register is written even when chip is unselected");
+    // Read from the data bus and check if we are expecting zzz. 
+    select_db_low_div_buffer_read(ioaddr, iorw_n);
+    @ (posedge clk);
+    assert (databus[7:0] === 'z)
+        $display("PASS! DB (Low) register read has not gone through");
+    else
+        $error("FAIL! DB (Low) register read has gone through");
+    @ (negedge clk);
+    select_db_high_div_buffer_write(ioaddr, iorw_n);
+    databus = 'h03;
+    @ (negedge clk);
+    // Probe the register directly and check if the value has been written
+    assert (iSpart.db_high_reg[7:0] === 'h00)
+        $display("PASS! DB (High) register is not written when chip is unselected");
+    else
+        $error("FAIL! DB (High) register is written even when chip is unselected");
+    select_db_high_div_buffer_read(ioaddr, iorw_n);
+    @ (posedge clk);
+    assert (databus[7:0] === 'z)
+        $display("PASS! DB (High) register read has not gone through");
+    else
+        $error("FAIL! DB (High) register read gone through");
+    @ (negedge clk);
+    // Unselect the spart and read the status register. The databus should not contain a value, only zzzz.
+    select_status_register_read(ioaddr, iorw_n);
+    @ (posedge clk);
+    assert (databus === 'z)
+        $display("PASS! Status register read shouldn't have gone through. Output zz. Actual %h", iSpart.status_reg);
+    else
+        $error("FAIL! Status register read has gone through. Output value %h", databus);
+    prev_status_reg_value = iSpart.status_reg;
+    // Write to the TX buffer should also not go through
+    // Select the buffer read/write ioaddr
+    select_buffer_rd_wr(ioaddr);
+    // Call task to write the buffer
+    write_spart_buffer (iorw_n, databus);
+    @ (negedge clk);
+    // Unselect the spart and read the status register. The databus should not contain a value, only zzzz.
+    select_status_register_read(ioaddr, iorw_n);
+    @ (posedge clk);
+    assert (iSpart.status_reg === prev_status_reg_value)
+        $display("PASS! Write of the TX buffer has not gone through. Status reg is still the same value %h", prev_status_reg_value);
+    else
+        $error("FAIL! Write of the TX buffer has gone through. Status regiser changed to %h from %h", iSpart.status_reg, prev_status_reg_value);
+    @ (negedge clk);
 endtask
 
 // Write the buffer
