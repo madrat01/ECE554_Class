@@ -39,6 +39,9 @@ module MiniLab1(
     wire            iocs_n;     // Active low chip select. Writes or reads to registers have no effect unless active
     wire            rx_q_empty; // If 1 then no receive data present to read
     wire            tx_q_full;  // If 1 then transmit queue is full and cannot accept anymore bytes
+	wire			TX, RX; 	// UART TX and RX lines
+	wire			spart_read_reg_dec;		// Address decode matches a SPART register to read
+	wire			spart_write_reg_dec;	// Address decode matches a SPART register to write
 
 	//////////// Address Map ///////////////////////
 	//  0xFFFF      |  
@@ -86,16 +89,27 @@ module MiniLab1(
 //================================
 //  SPART Access Signals
 //================================
+
+	// Reading a SPART register
+	assign spart_read_reg_dec = (addr == 16'hC004 || addr == 16'hC005 || addr == 16'hC006 || addr == 16'hC007);
+	// Writing a SPART register
+	assign spart_write_reg_dec = (addr == 16'hC004 || addr == 16'hC006 || addr == 16'hC007); 
+    
+	// SPART selected when Address == 'hC004 || 'hC005 || 'hC006 || 'hC007
+    // iocs_n is active low
+    assign iocs_n = ~spart_read_reg_dec;
     
     // Read from SPART when MM_RE == 1 and address matched
     // Write to SPART when MM_WE == 1 and address matched
-    assign iorw_n = (mm_re & (addr == 16'hC004 || addr == 16'hC005)) ? 1'b1 :
-                    (mm_we & (addr == 16'hC004 || addr == 16'hC006 || addr == 16'hC007)) ? 1'b0 : 1'b1;
+    assign iorw_n = (mm_re & spart_read_reg_dec) ? 1'b1 :
+                    (mm_we & spart_write_reg_dec) ? 1'b0 : 1'b1;
     
     // Read Data from the SPART
     // 16'hC004 = Read from RX queue
     // 16'hC005 = SPART status register
-    assign SPART_rdata = mm_re && (addr == 16'hC004 || addr == 16'hC005) ? {8'h0, databus} : 16'hbeef;
+    // 16'hC005 = SPART DB (Low) register
+    // 16'hC005 = SPART SB (High) register
+    assign SPART_rdata = mm_re && spart_read_reg_dec ? {8'h0, databus} : 16'hbeef;
     
     // Decode the IOADDR depending on the MM address used to access
     always @ (*) begin
@@ -112,10 +126,6 @@ module MiniLab1(
         endcase
     end
     
-    // SPART selected when Address == 'hC004 || 'hC005 || 'hC006 || 'hC007
-    // iocs_n is active low
-    assign iocs_n = ~(addr[15:2] == 14'b1100_0000_0000_01);
-
 	// Write to spart when IO write is enabled. Tri-buf since databus is a bi-directional bus.	
 	assign databus = ~iorw_n ? wdata[7:0] : 8'hzz;
 
@@ -123,8 +133,11 @@ module MiniLab1(
 //  Module Instantiations
 //========================================================
 
+	// MUX the read data from pheripherals to the CPU
+	// LED read 'hC000
+	// SPART register reads 'hC00{4,5,6,7}
     assign rdata = mm_re && addr == 16'hC000 ? SW_rdata :
-                   mm_re && (addr == 16'hC004 || addr == 16'hC005) ? SPART_rdata : 16'hbeef;
+                   mm_re && spart_read_reg_dec ? SPART_rdata : 16'hbeef;
 				   
 	// Instantiate reset synchronizer
 	rst_synch iRST(.RST_n(RST_n), .rst_n(rst_n), .clk(clk));
