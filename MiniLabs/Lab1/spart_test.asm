@@ -55,20 +55,22 @@ jal .NextLine
 llb R3, 0x00 # starting address
 llb R4, 0x01 # increment amount
 llb R5, 0x0D # <CR>
+llb R11,0x0F # bitmask for lower 4 bytes
 .PollName:
   # stall until has a character
-  # mem[0xC0005] != 0
+  # (bottom four bits of status reg == 15)
+  # (mem[0xC0005] & 0x0F) != 0
   lw  R14, R1, 1
-  sll R14, R14, 0
-  b   neq, .PollName
+  and R14, R14, R11
+  b   eq, .PollName
   # get character from RX buffer
   lw  R2, R1, 0
   # store in memory 
   sw  R2, R3, 0
   # increment pointer for next char
-  add R3, R3, R1
+  add R3, R3, R4
   # last char wasn't <CR> (0x0D)? Keep polling then
-  and R2, R2, R5
+  sub R2, R2, R5
   b   neq, .PollName
 
 # Print "Hello <name>"
@@ -79,17 +81,19 @@ llb R6, 0x09 # max # of entries in buffer
 .PrintName:
   # get character from 0x0000 at start
   lw  R2, R3, 0
+  # inc to next
+  add R3, R3, R4
   # send to RX buffer
   sw  R2, R1, 0
-  # Check for overflow (get size of sreg), wait if there is (>8)
+  # Check for overflow (sreg & 0xf), wait if there is (>8)
   lw  R14, R1, 1
-  srl R14, R14, 3
+  and R14, R14, R11
   sub R14, R6, R14 
   b   gt, PrintName_skip_wait
   # >8 entries? stall
   jal .WaitStatusReg
   PrintName_skip_wait:
-  sll R14, R2, R2
+  sll R14, R2, 0
   # repeat till we get a 0 (null terminator)
   b   neq, .PrintName
 
@@ -106,11 +110,12 @@ llb R6, 0x09 # max # of entries in buffer
 .WaitStatusReg:
   # Grab status value (assumed that R1 points to 0xC004)
   lw  R14, R1, 1
-  # Shift bits [7:4] to [0:3] (>>3)
-  srl R14, R14, 3
-  # Update status registers
-  sll R14, R14, 0
-  # Return when there are 0 entries left
+  # Shift bits [7:4] to [3:0] (>>4)
+  srl R14, R14, 4
+  # Subtract 8 from R14,
+  # Return when there are 8 entries available for TX
+  llb R13, 0x08
+  sub R14, R14, R13 
   b   neq, .WaitStatusReg
   jr  R15
 
@@ -123,9 +128,7 @@ llb R6, 0x09 # max # of entries in buffer
 
 # Send ^[[2J
 .ClearScreen:
-  llb R2, 0x5E
-  sw  R2, R1, 0
-  llb R2, 0x5B
+  llb R2, 0x1B
   sw  R2, R1, 0
   llb R2, 0x5B
   sw  R2, R1, 0
@@ -133,26 +136,26 @@ llb R6, 0x09 # max # of entries in buffer
   sw  R2, R1, 0
   llb R2, 0x4A
   sw  R2, R1, 0
+  sll R10, R15, 0 
   jal .WaitStatusReg
+  sll R15, R10, 0
   jr  R15
 
 
 # Send ^[E
 .NextLine:
-  llb R2, 0x5E
-  sw  R2, R1, 0
-  llb R2, 0x5B
+  llb R2, 0x1B
   sw  R2, R1, 0
   llb R2, 0x45
   sw  R2, R1, 0
+  sll R10, R15, 0 
   jal .WaitStatusReg
+  sll R15, R10, 0
   jr  R15
 
 
 .Hello_:
   #"Hello "
-  llb R2, 0x20
-  sw  R2, R1, 0
   llb R2, 0x48
   sw  R2, R1, 0
   llb R2, 0x65
@@ -163,7 +166,11 @@ llb R6, 0x09 # max # of entries in buffer
   sw  R2, R1, 0
   llb R2, 0x6F
   sw  R2, R1, 0
+  llb R2, 0x20
+  sw  R2, R1, 0
+  sll R10, R15, 0 
   jal .WaitStatusReg
+  sll R15, R10, 0
   jr  R15
 
 
@@ -179,5 +186,7 @@ llb R6, 0x09 # max # of entries in buffer
   sw  R2, R1, 0
   llb R2, 0x64
   sw  R2, R1, 0
+  sll R10, R15, 0 
   jal .WaitStatusReg
+  sll R15, R10, 0
   jr  R15

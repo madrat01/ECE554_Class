@@ -100,7 +100,7 @@ always @(posedge clk, negedge rst_n)
 	  alu_func_ID_EX    <= alu_func;
 	  src0sel_ID_EX		<= src0sel;
 	  src1sel_ID_EX		<= src1sel;
-	  dm_re_ID_EX       <= dm_re & !flush;
+	  dm_re_ID_EX       <= dm_re & !load_use_hazard & !flush;
 	  dm_we_ID_EX       <= dm_we & !load_use_hazard & !flush;
 	  clk_z_ID_EX		<= clk_z & !load_use_hazard & !flush;
 	  clk_nv_ID_EX		<= clk_nv & !load_use_hazard & !flush;

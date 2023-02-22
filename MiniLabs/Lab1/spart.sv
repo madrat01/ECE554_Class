@@ -188,9 +188,9 @@ queue TX_BUF (
 assign baud_rate = {db_high_reg[4:0], db_low_reg[7:0]};
 
 // Tri-state buffered databus. Output the read of the registers when IO read is enabled, chip is selected and the IOADDR matches the register address. 
-assign databus = iorw_n & ~iocs_n & ~|ioaddr        ? RX_data_out   : 
-                 iorw_n & ~iocs_n & ioaddr == 2'b01 ? status_reg    :
-                 iorw_n & ~iocs_n & ioaddr == 2'b10 ? db_low_reg    :
-                 iorw_n & ~iocs_n & ioaddr == 2'b11 ? db_high_reg   : 8'hzz;
+assign databus = iorw_n & ~iocs_n & ~|ioaddr        ? {8'b0, RX_data_out}   : 
+                 iorw_n & ~iocs_n & ioaddr == 2'b01 ? {8'b0, status_reg }   :
+                 iorw_n & ~iocs_n & ioaddr == 2'b10 ? {8'b0, db_low_reg }   :
+                 iorw_n & ~iocs_n & ioaddr == 2'b11 ? {8'b0, db_high_reg}   : 8'hzz;
 
 endmodule

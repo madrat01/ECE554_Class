@@ -40,7 +40,7 @@ pc iPC(.clk(clk), .rst_n(rst_n), .stall_IM_ID(stall_IM_ID), .pc(iaddr), .dst_ID_
 /////////////////////////////////////
 // Instantiate instruction memory //
 ///////////////////////////////////
-IM iIM(.clk(clk), .addr(iaddr), .rd_en(1'b1), .instr(instr));
+IM iIM(.clk(clk), .addr(iaddr[13:0]), .rd_en(1'b1), .instr(instr));
 
 //////////////////////////////////////////////
 // Instantiate register instruction decode //
@@ -106,7 +106,7 @@ assign re   = dm_re_EX_DM;
 //////////////////////////////
 // Instantiate data memory //
 ////////////////////////////
-DM iDM(.clk(clk),.addr(dst_EX_DM), .re(dm_re_EX_DM), .we(DM_we), .wrt_data(p0_EX_DM),
+DM iDM(.clk(clk),.addr(dst_EX_DM[12:0]), .re(dm_re_EX_DM), .we(DM_we), .wrt_data(p0_EX_DM),
        .rd_data(dm_rd_data_EX_DM));
 
 // We can get data from MM or DM. mm_re is high when we are receiving data from MM.
