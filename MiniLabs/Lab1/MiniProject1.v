@@ -98,12 +98,12 @@ module MiniProject1(
     
 	// SPART selected when Address == 'hC004 || 'hC005 || 'hC006 || 'hC007
     // iocs_n is active low
-    assign iocs_n = ~spart_read_reg_dec;
+    assign iocs_n = ~((mm_re | mm_we) & spart_read_reg_dec);
     
     // Read from SPART when MM_RE == 1 and address matched
     // Write to SPART when MM_WE == 1 and address matched
-    assign iorw_n = (mm_re & spart_read_reg_dec) ? 1'b1 :
-                    (mm_we & spart_write_reg_dec) ? 1'b0 : 1'b1;
+	// iorw_n = 1 : Read; iorw_n = 0 : Write
+    assign iorw_n = (mm_we & spart_write_reg_dec) ? 1'b0 : (mm_re & spart_read_reg_dec);
     
     // Read Data from the SPART
     // 16'hC004 = Read from RX queue
