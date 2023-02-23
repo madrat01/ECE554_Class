@@ -1,14 +1,19 @@
 module queue(clk, rst_n, in_data, re, we, out_data, free_entries, filled_entries, empty, full);
+	// inputs
 	input clk, rst_n;
 	input [7:0] in_data;
 	input re, we;
 	
+	// outputs
 	output [7:0] out_data;
 	output [3:0] free_entries, filled_entries;
 	output empty, full;
 	
+	// circular buffer
 	logic [7:0] buffer [7:0];
-	logic [3:0] new_ptr, old_ptr;
+	
+	// pointers for where to write data and where to read
+	logic [3:0] new_ptr, old_ptr;  // new = where to write, old = where to read
 
 	// continuous assign for out_data from wherever old_ptr is pointing
 	assign out_data = buffer[old_ptr[2:0]];
