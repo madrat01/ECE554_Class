@@ -12,6 +12,7 @@ logic       rx_q_empty;     // If 1 then no receive data present to read
 logic       tx_q_full;      // If 1 then transmit queue is full and cannot accept anymore bytes
 logic       TX;			    // UART TX line
 logic       RX;			    // UART RX line
+int         baud_rate_cycles;
 
 // Instantiate spart module
 spart iSpart (
@@ -35,6 +36,7 @@ initial begin
     clk = 0;
     // Non-reset mode
     rst_n = 1;
+    baud_rate_cycles = 'd40000;
     // Defaut to buffer read mode so that we don't write unnecessarily
     iorw_n = 1;
     // Default to not selecting spart
@@ -55,7 +57,7 @@ initial begin
     // Fully write the TX buffer and read the RX buffer
     ///////////////////////////////////////////////////////////
     $display("========= Start Stressing TX and RX Buffer ===========");
-    stress_rd_wr_buffer(clk, ioaddr, iorw_n, iocs_n, tx_q_full, rx_q_empty, databus);
+    stress_rd_wr_buffer(clk, ioaddr, iorw_n, iocs_n, tx_q_full, rx_q_empty, databus, baud_rate_cycles);
     $display("========= End Stressing TX and RX Buffer ===========");
     ///////////////////////////////////////////////////////////
     // Read and write with different baud rates
@@ -69,6 +71,7 @@ initial begin
     ///////////////////////////////////////////////////////////
     $display("========= Start Baud Rate Change Test ===========");
     // Change baud rate to h'0036.
+	baud_rate_cycles = 'd10000;
     @ (negedge clk);
     select_db_low_div_buffer_write(ioaddr, iorw_n);
     databus = 'h36;
@@ -77,7 +80,7 @@ initial begin
     databus = 'h00;
     @ (negedge clk);
     // Fully write and read the buffer. The RX buffer should fill much faster than before since the transmission has a higher baud rate.
-    stress_rd_wr_buffer(clk, ioaddr, iorw_n, iocs_n, tx_q_full, rx_q_empty, databus);
+    stress_rd_wr_buffer(clk, ioaddr, iorw_n, iocs_n, tx_q_full, rx_q_empty, databus, baud_rate_cycles);
     $display("========== End Baud Rate Change Test ===========");
     @ (negedge clk);
     ///////////////////////////////////////////////////////////
@@ -100,7 +103,7 @@ end
 // Tasks to stress spart
 
 // Stress write and read of the buffer
-task automatic stress_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref logic iorw_n, ref logic iocs_n, ref logic tx_q_full, ref logic rx_q_empty, ref logic [7:0] databus);
+task automatic stress_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref logic iorw_n, ref logic iocs_n, ref logic tx_q_full, ref logic rx_q_empty, ref logic [7:0] databus, input int baud_rate_cycles);
     logic [7:0] buffer_data [$:7];
     logic [7:0] buffer_front;
     // Write buffer till the queue is full
@@ -125,7 +128,7 @@ task automatic stress_rd_wr_buffer (ref logic clk, ref logic [1:0] ioaddr, ref l
         $error("ERROR! TX Queue has no data!");
     
     // Start to read the RX queue
-    repeat (40000) @ (negedge clk);
+    repeat (baud_rate_cycles) @ (negedge clk);
     // Read the buffer status to determine is RX queue is full
     select_status_register_read(ioaddr, iorw_n);
     @ (posedge clk);

@@ -8,9 +8,11 @@ module UART_tx(input clk, input rst_n, output TX, input trmt, input [7:0]tx_data
 	// states
 	typedef enum logic {IDLE, TRANSMIT} state_t;
 	state_t state, nxt_state;
-						 
+	
+	// shift when baud_cnt reaches 0 (shift at baud rate)
 	assign shift = baud_cnt == 0 ? 1'b1 : 1'b0;
 	
+	// always transmit the LSB of the shift_reg
 	assign TX = tx_shft_reg[0];
 				
 	// shift_reg mux and flop
@@ -26,28 +28,30 @@ module UART_tx(input clk, input rst_n, output TX, input trmt, input [7:0]tx_data
 		
 		
 	// bit_cnt mux and flop
+	// needs to count to 10 bits
 	always_ff @(posedge clk, negedge rst_n)
 		if(!rst_n)
 			bit_cnt <= 0;
-		else if(init)
+		else if(init) // reset bit count to 0
 			bit_cnt <= 0;
-		else if(shift)
+		else if(shift) // if shift, one more bit has been shifted out
 			bit_cnt <= bit_cnt + 1;
-		else
+		else // maintain if not initializing or shifting
 			bit_cnt <= bit_cnt;	
 		
 	// baud_cnt mux and flop
 	always_ff @(posedge clk, negedge rst_n)
 		if(!rst_n)
 			baud_cnt <= 0;
-		else if(init | shift)
+		else if(init | shift) // reset baud_cnt after each bit is shifted and when transmission starts
 			baud_cnt <= baud_rate;
-		else if(transmitting)
+		else if(transmitting) // if transmitting count down baud_rate
 			baud_cnt <= baud_cnt - 1;
 		else
 			baud_cnt <= baud_cnt;
 			
 	// tx_done
+	// ensures the done signal is only set for one cycle
 	always_ff @(posedge clk, negedge rst_n)
 		if(!rst_n)
 			tx_done <= 0;
@@ -78,7 +82,7 @@ module UART_tx(input clk, input rst_n, output TX, input trmt, input [7:0]tx_data
 			end
 			TRANSMIT: begin
 				transmitting <= 1;
-				if(bit_cnt == 10) begin
+				if(bit_cnt == 10) begin  // finished when 10 bits are sent
 					set_done <= 1;
 					transmitting <= 0;
 					nxt_state <= IDLE;
