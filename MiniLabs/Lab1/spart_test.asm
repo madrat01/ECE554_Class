@@ -65,6 +65,10 @@ jal .World
 
 # Position cursor on next line
 jal .NextLine
+jal .Tab
+jal .Tab
+jal .PromptName
+
 # Poll status register, read in character
 # starting at 0x0000 (any below 0xC000 is free)
 .PollName:
@@ -78,9 +82,14 @@ jal .NextLine
   lw  R2, R1, 0
   # store in memory 
   sw  R2, R3, 0
-
   # wait for send buffer to be empty
   jal .WaitRXStatusReg
+  
+  # echo out to terminal 
+  sw  R2, R1, 0
+  # wait for TX buffer to be empty
+  jal .WaitStatusReg
+
   # increment pointer for next char
   add R3, R3, R4
   # last char wasn't <CR> (0x0D)? Keep polling then
@@ -91,8 +100,14 @@ jal .NextLine
   lhb R2, 0x00
   sw  R2, R3, 0
 
+# to next line
+jal .NextLine
+jal .Tab
+jal .Tab
+
 llb R3, 0x00 # reset starting address
 # Print "Hello <name>"
+jal .Tab
 jal .Tab
 jal .Hello_
 
@@ -103,7 +118,7 @@ jal .Hello_
   add R3, R3, R4
   # send to TX buffer
   sw  R2, R1, 0
-
+  jal .WaitStatusReg
   # Check flags
   sll R14, R2, 0
   # repeat till we get a 0 (null terminator)
@@ -231,6 +246,26 @@ jal .Hello_
   llb R2, 0x6C
   sw  R2, R1, 0
   llb R2, 0x64
+  sw  R2, R1, 0
+  sll R10, R15, 0 
+  jal .WaitStatusReg
+  sll R15, R10, 0
+  jr  R15
+
+
+.PromptName:
+  #"Name? "
+  llb R2, 0x4E 
+  sw  R2, R1, 0
+  llb R2, 0x61
+  sw  R2, R1, 0
+  llb R2, 0x6D
+  sw  R2, R1, 0
+  llb R2, 0x65
+  sw  R2, R1, 0
+  llb R2, 0x3F
+  sw  R2, R1, 0
+  llb R2, 0x20
   sw  R2, R1, 0
   sll R10, R15, 0 
   jal .WaitStatusReg
