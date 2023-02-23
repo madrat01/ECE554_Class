@@ -26,7 +26,7 @@ module queue(clk, rst_n, in_data, re, we, out_data, free_entries, filled_entries
 	// logic for maintaining old_ptr
 	always_ff @(posedge clk, negedge rst_n)
 		if (~rst_n) // reset
-			old_ptr <= 4'b000;
+			old_ptr <= 4'b0000;
 		else if (re & !empty) // increment old_ptr only if there is data to be read and read is enabled
 			old_ptr <= old_ptr + 4'b001;
 		
@@ -38,8 +38,12 @@ module queue(clk, rst_n, in_data, re, we, out_data, free_entries, filled_entries
 			new_ptr <= new_ptr + 4'b0001;
 
     // Write to the buffer when write enable and not full
-	always_ff @(posedge clk)
-		if (we && ~full)
+	always_ff @(posedge clk, negedge rst_n)
+        if (~rst_n) begin
+            for (int i = 0; i < 8; i++)
+                buffer[i] <= 'b0;
+		end else if (we && ~full) begin
 			buffer[new_ptr[2:0]] <= in_data;
+        end
 	
 endmodule
